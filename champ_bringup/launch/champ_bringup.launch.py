@@ -93,11 +93,12 @@ def generate_launch_description():
   # Start Gazebo
   ground_plane_sdf=PathJoinSubstitution([FindPackageShare('champ_gazebo'), 'worlds', 'ground_plane.sdf'])
   marsyard_sdf=PathJoinSubstitution([FindPackageShare('champ_gazebo'), 'worlds', 'marsyard2020.sdf'])
+  industrial_plant_sdf=PathJoinSubstitution([FindPackageShare('champ_gazebo'), 'worlds', 'industrial_plant.sdf'])
   gz_launch = IncludeLaunchDescription(
             PathJoinSubstitution([FindPackageShare('ros_gz_sim'), 'launch', 'gz_sim.launch.py']),
             launch_arguments = [
                ('gz_args', [
-                   marsyard_sdf,
+                   industrial_plant_sdf,
                    ' -r',
                    ' -v 4' 
                ])
@@ -105,24 +106,12 @@ def generate_launch_description():
             condition=IfCondition(use_simulator)
   )
 
-  # Bridge
-  bridge_config_file = os.path.join(
-      champ_bringup_share_dir, 'config', "spot_bridge.yaml")
-
-  bridge = Node(
-      package='ros_gz_bridge',
-      executable='parameter_bridge',
-      parameters=[{'config_file': bridge_config_file}],
-      #arguments=['/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'],
-      output='screen'
-  )
-
   # Robot spawn/publisher
   #xacro_full_dir = os.path.join(champ_description_share_dir, 'urdf', 'spot/spot.urdf.xacro') #'champ/champ.urdf.xacro'
   #xacro_mappings = {'simulate_cameras': 'True', 'visualize': 'False'}
   spot_description_share_dir = get_package_share_directory('spot_description')
-  xacro_full_dir = os.path.join(spot_description_share_dir, 'urdf', 'spot.urdf.xacro')
-  xacro_mappings={'arm': 'True', 'add_ros2_control_tag': 'True', 'hardware_interface_type': 'gazebo'}
+  xacro_full_dir = os.path.join(spot_description_share_dir, 'urdf', 'spot', 'spot.urdf.xacro')
+  xacro_mappings={'arm': 'True', 'add_ros2_control_tag': 'True', 'hardware_interface_type': 'gazebo', 'simulate_cameras': 'True', 'visualize': 'True', 'simulate_imu': 'True'}
 
   print(xacro_full_dir)
 
@@ -147,11 +136,42 @@ def generate_launch_description():
         package='ros_gz_sim',
         executable='create',
         arguments=['-name', 'spot',
-                   '-topic', '/robot_description', "-z", "0.0"], # 0.84
+                   '-topic', '/robot_description', "-z", "0.84"], # 0.84
         parameters=[{"use_sim_time": use_sim_time}],
         output='screen',
         condition=IfCondition(use_simulator)        
   )
+  
+  #  INCLUDE RVIZ LAUNCH FILE IF use_rviz IS SET TO TRUE
+  declare_rviz_launch_include = IncludeLaunchDescription(PythonLaunchDescriptionSource(
+      os.path.join(champ_bringup_share_dir,
+                      'launch',
+                      'rviz.launch.py')),
+      condition=IfCondition(use_rviz),
+      launch_arguments={
+      'rviz_config': rviz_config
+  }.items())
+
+  localization_params = LaunchConfiguration('localization_params')
+  declare_localization_params = DeclareLaunchArgument(
+      'localization_params',
+      default_value=os.path.join(
+          champ_bringup_share_dir, 'config', 'robot_localization_params.yaml'),
+      description='Path to the vox_nav parameters file.')
+
+  base_to_footprint_ekf = Node(package='robot_localization',
+                                  executable='ekf_node',
+                                  name='base_to_footprint_ekf',
+                                  output='screen',
+                                  parameters=[localization_params, {"use_sim_time" : True}],
+                                  remappings=[('odometry/filtered', 'odometry/local')])
+
+  footprint_to_odom_ekf = Node(package='robot_localization',
+                                  executable='ekf_node',
+                                  name='footprint_to_odom_ekf',
+                                  output='screen',
+                                  parameters=[localization_params, {"use_sim_time" : True}],
+                                  remappings=[('odometry/filtered', 'odom')])
 
   load_joint_state_controller = Node(
         package="controller_manager",
@@ -168,6 +188,38 @@ def generate_launch_description():
         arguments=["joint_trajectory_controller", "-c", "/controller_manager", "--switch-timeout", "100.0"],
         name="start_joint_trajectory_controller",
         output='screen',
+  )
+  
+    # Bridge
+  bridge_config_file = os.path.join(
+      champ_bringup_share_dir, 'config', "spot_bridge.yaml")
+
+  bridge = Node(
+      package='ros_gz_bridge',
+      executable='parameter_bridge',
+      parameters=[{'config_file': bridge_config_file}],
+      #arguments=['/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock'],
+      output='screen'
+  )
+    # Running tf_broadcaster
+  broadcast_left_front_cam = Node(
+      package='tf2_ros',
+      executable='static_transform_publisher',
+      #parameters=[{'config_file': bridge_config_file}],
+      arguments=["--x", "0", "--y", "0", "--z", "0",
+      "--roll", "0", "--pitch", "0", "--yaw", "0",
+      "--frame-id", "camera_frontleft", "--child-frame-id", "spot/camera_frontleft/frontleft_depth"],
+      output='screen'
+  )
+
+  broadcast_right_front_cam = Node(
+      package='tf2_ros',
+      executable='static_transform_publisher',
+      #parameters=[{'config_file': bridge_config_file}],
+      arguments=["--x", "0", "--y", "0", "--z", "0",
+      "--roll", "0", "--pitch", "0", "--yaw", "0",
+      "--frame-id", "camera_frontright", "--child-frame-id", "spot/camera_frontright/frontright_depth"],
+      output='screen'
   )
 
 
@@ -194,11 +246,11 @@ def generate_launch_description():
       ),
       #declare_quadruped_controller_node,
       #declare_state_estimation_node,
-      #declare_rviz_launch_include,
-      #declare_localization_params,
-      #footprint_to_odom_ekf,
-      #base_to_footprint_ekf,
-      #broadcast_left_front_cam,
-      #broadcast_right_front_cam
+      declare_rviz_launch_include,
+      declare_localization_params,
+      footprint_to_odom_ekf,
+      base_to_footprint_ekf,
+      broadcast_left_front_cam,
+      broadcast_right_front_cam
       #joint_state_publisher_gui  # added by diya 9/6
     ])

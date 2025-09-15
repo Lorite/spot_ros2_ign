@@ -103,7 +103,7 @@ def generate_launch_description():
       package='ros_gz_bridge',
       executable='parameter_bridge',
       parameters=[{'config_file': bridge_config_file}],
-      #arguments=['/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'],
+      #arguments=['/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock'],
       output='screen'
   )
 
@@ -174,6 +174,57 @@ def generate_launch_description():
         executable='helper_publish_base_pose',
         output='screen',
   )
+  
+  # camera TFs ??????? TODO: improve this in the model directly
+  broadcast_left_front_cam = Node(
+      package='tf2_ros',
+      executable='static_transform_publisher',
+      #parameters=[{'config_file': bridge_config_file}],
+      arguments=["--x", "0", "--y", "0", "--z", "0",
+      "--roll", "0", "--pitch", "0", "--yaw", "0",
+      "--frame-id", "camera_frontleft", "--child-frame-id", "spot/camera_frontleft/frontleft_depth"],
+      output='screen'
+  )
+
+  broadcast_right_front_cam = Node(
+      package='tf2_ros',
+      executable='static_transform_publisher',
+      #parameters=[{'config_file': bridge_config_file}],
+      arguments=["--x", "0", "--y", "0", "--z", "0",
+      "--roll", "0", "--pitch", "0", "--yaw", "0",
+      "--frame-id", "camera_frontright", "--child-frame-id", "spot/camera_frontright/frontright_depth"],
+      output='screen'
+  )
+  
+  broadcast_left_cam = Node(
+      package='tf2_ros',
+      executable='static_transform_publisher',
+      #parameters=[{'config_file': bridge_config_file}],
+      arguments=["--x", "0", "--y", "0", "--z", "0",
+      "--roll", "0", "--pitch", "0", "--yaw", "0",
+      "--frame-id", "camera_left", "--child-frame-id", "spot/camera_left/left_depth"],
+      output='screen'
+  )
+  
+  broadcast_right_cam = Node(
+      package='tf2_ros',
+      executable='static_transform_publisher',
+      #parameters=[{'config_file': bridge_config_file}],
+      arguments=["--x", "0", "--y", "0", "--z", "0",
+      "--roll", "0", "--pitch", "0", "--yaw", "0",
+      "--frame-id", "camera_right", "--child-frame-id", "spot/camera_right/right_depth"],
+      output='screen'
+  )
+  
+  broadcast_back_cam = Node(
+      package='tf2_ros',
+      executable='static_transform_publisher',
+      #parameters=[{'config_file': bridge_config_file}],
+      arguments=["--x", "0", "--y", "0", "--z", "0",
+      "--roll", "0", "--pitch", "0", "--yaw", "0",
+      "--frame-id", "camera_back", "--child-frame-id", "spot/camera_back/back_depth"],
+      output='screen'
+  )
 
   # Start quadruped controller
   launch_quadruped_controller = IncludeLaunchDescription(
@@ -207,5 +258,10 @@ def generate_launch_description():
           ),
           condition=IfCondition(LaunchConfiguration("start_quadruped_controller"))
       ),
-      odom_republish_node
+      odom_republish_node,
+      broadcast_left_front_cam,
+      broadcast_right_front_cam,
+      broadcast_left_cam,
+      broadcast_right_cam,
+      broadcast_back_cam
     ])

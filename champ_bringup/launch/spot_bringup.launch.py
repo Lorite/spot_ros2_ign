@@ -74,7 +74,7 @@ def generate_launch_description():
         description='If true, use simulated clock'),
     DeclareLaunchArgument(
         'use_rviz',
-        default_value='False',
+        default_value='True',
         description='whether or not to launch rviz'),
     DeclareLaunchArgument(
         'tf_prefix',
@@ -82,9 +82,7 @@ def generate_launch_description():
         description='...'),
     DeclareLaunchArgument(
         'rviz_config',
-        default_value=os.path.join(
-            champ_bringup_share_dir, 'rviz', 'default_view.rviz'),
-        description='...'),
+        default_value=os.path.join(get_package_share_directory('spot_description'), 'rviz/viz_spot_lorite.rviz')),
     DeclareLaunchArgument('spawn_spot', default_value='True'),
     DeclareLaunchArgument("urdf_file",
         default_value=os.path.join( get_package_share_directory('spot_description'), 'urdf/spot.urdf.xacro')),
@@ -140,10 +138,21 @@ def generate_launch_description():
                       "z": LaunchConfiguration("z"),
                       "roll": LaunchConfiguration("roll"),
                       "yaw": LaunchConfiguration("yaw"),
+                      "tf_prefix": tf_prefix,
                       "start_quadruped_controller": LaunchConfiguration("start_quadruped_controller")                                            
                      }.items(),
             condition=IfCondition(LaunchConfiguration("spawn_spot"))
   )
+  
+  #  INCLUDE RVIZ LAUNCH FILE IF use_rviz IS SET TO TRUE
+  declare_rviz_launch_include = IncludeLaunchDescription(PythonLaunchDescriptionSource(
+      os.path.join(champ_bringup_share_dir,
+                      'launch',
+                      'rviz.launch.py')),
+      condition=IfCondition(use_rviz),
+      launch_arguments={
+      'rviz_config': rviz_config
+  }.items())
       
   return LaunchDescription(
     launch_args + 
@@ -151,5 +160,6 @@ def generate_launch_description():
       SetParameter(name='use_sim_time', value=True), 
       env_gz_sim,
       gz_launch,
-      spawn_spot
+      spawn_spot,
+      declare_rviz_launch_include
     ])

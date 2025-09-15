@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.8">
-  <world name="urban_circuit_02">
+  <world name="industrial_plant">
   
     <physics name="1ms" type="ignored">
       <max_step_size>0.004</max_step_size>
@@ -305,12 +305,12 @@
         
        
 
-    <include>
+    <!-- <include>
       <name>tile_9</name>
-      <uri>https://fuel.ignitionrobotics.org/1.0/OpenRobotics/models/Urban 2 Story Lights</uri>
-      <!--<pose>-96.050000 -56.000000 0.920000 0 0 0.000000</pose>-->
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Urban 2 Story Lights</uri>
+      <pose>-96.050000 -56.000000 0.920000 0 0 0.000000</pose>
       <pose>43.0 0.0 10.0 0 0 -1.5708</pose>      
-    </include>
+    </include> -->
 
     <!--<include>
       <name>tile_10</name>
@@ -320,16 +320,16 @@
     </include>-->    
     
     
-    <include>
+    <!-- <include>
       <name>tile_11</name>
-      <uri>https://fuel.ignitionrobotics.org/1.0/OpenRobotics/models/Urban Service Room Centered</uri>
-      <!--<pose>-96.050000 -56.000000 10.920000 0 0 0.000000</pose>-->
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Urban Service Room Centered</uri>
+      <pose>-96.050000 -56.000000 10.920000 0 0 0.000000</pose>
       <pose>43.0 0.0 10.0 0 0 -1.5708</pose>      
-    </include>    
+    </include>     -->
     
     <include>
       <name>tile_12</name>
-      <uri>https://fuel.ignitionrobotics.org/1.0/OpenRobotics/models/Urban Service Room Straight Lights</uri>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Urban Service Room Straight Lights</uri>
       <!--<pose>-56.050000 -56.000000 0.920000 0 0 1.570796</pose>-->
       <pose>3.0 0.0 0.0 0 0 0.0</pose>      
     </include>      

@@ -25,13 +25,13 @@ class SpotWalk(Node):
 
     def create_twist(self, x, y, z, ax, ay, az):
         twist = Twist()
-        twist.linear.x = x
-        twist.linear.y = y
-        twist.linear.z = z
+        twist.linear.x = float(x)
+        twist.linear.y = float(y)
+        twist.linear.z = float(z)
         
-        twist.angular.x = ax
-        twist.angular.y = ay
-        twist.angular.z = az
+        twist.angular.x = float(ax)
+        twist.angular.y = float(ay)
+        twist.angular.z = float(az)
 
         return twist
         

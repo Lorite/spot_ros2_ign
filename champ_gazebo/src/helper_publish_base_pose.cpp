@@ -1,42 +1,62 @@
 #include <memory>
 
 #include <rclcpp/rclcpp.hpp>
-#include <geometry_msgs/msg/pose.hpp>
-#include <geometry_msgs/msg/pose_array.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
+#include <nav_msgs/msg/odometry.hpp>
 
 /**
  * @class HelperPublishBase
  */
-class HelperPublishBase : public rclcpp::Node
-{
+class HelperPublishBase : public rclcpp::Node {
 public:
   HelperPublishBase()
   : Node("helper_publisher")
   {
-    body_pose_array_topic_ = "body_pose_array";
-    body_pose_topic_ = "body_pose";
-    sub_pose_array_ = this->create_subscription<geometry_msgs::msg::PoseArray>(body_pose_array_topic_, 
-           10, std::bind(&HelperPublishBase::odom_cb, this, std::placeholders::_1) );
-    pub_pose_ = this->create_publisher<geometry_msgs::msg::Pose>(body_pose_topic_, 10);
+    // Parameters (with sensible defaults)
+    this->declare_parameter<std::string>("input_topic", "/model/spot/pose");
+    this->declare_parameter<std::string>("output_topic", "ground_truth_odom");
+
+    input_topic_ = this->get_parameter("input_topic").as_string();
+    output_topic_ = this->get_parameter("output_topic").as_string();
+
+    // Subscriber: geometry_msgs/TransformStamped
+    sub_tf_ = this->create_subscription<geometry_msgs::msg::TransformStamped>(
+      input_topic_, rclcpp::QoS(10),
+      std::bind(&HelperPublishBase::tf_cb, this, std::placeholders::_1));
+
+    // Publisher: nav_msgs/Odometry
+    pub_odom_ = this->create_publisher<nav_msgs::msg::Odometry>(output_topic_, rclcpp::QoS(10));
   }
 
-  void odom_cb( const geometry_msgs::msg::PoseArray &_poses) 
-  {
-     //RCLCPP_INFO(this->get_logger(), "Got odom pose array, get one and republish");
-     geometry_msgs::msg::Pose msg;
-     if(_poses.poses.size() > 0)
-     {
-       msg = _poses.poses[0];
-       pub_pose_->publish(msg);
-     }
-  };
-
-
 private:
-  rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr sub_pose_array_;
-  rclcpp::Publisher<geometry_msgs::msg::Pose>::SharedPtr pub_pose_;
-  std::string body_pose_array_topic_;
-  std::string body_pose_topic_;
+  void tf_cb(const geometry_msgs::msg::TransformStamped & tf_msg)
+  {
+    nav_msgs::msg::Odometry odom;
+    // Header/frame association mirrors the TransformStamped
+    odom.header = tf_msg.header;               // e.g., frame_id = odom/world (as provided)
+    odom.child_frame_id = tf_msg.child_frame_id; // e.g., base_link (possibly prefixed)
+
+    // Pose from transform
+    odom.pose.pose.position.x = tf_msg.transform.translation.x;
+    odom.pose.pose.position.y = tf_msg.transform.translation.y;
+    odom.pose.pose.position.z = tf_msg.transform.translation.z;
+    odom.pose.pose.orientation = tf_msg.transform.rotation;
+
+    // No velocity info in TransformStamped; publish zeros by default
+    odom.twist.twist.linear.x = 0.0;
+    odom.twist.twist.linear.y = 0.0;
+    odom.twist.twist.linear.z = 0.0;
+    odom.twist.twist.angular.x = 0.0;
+    odom.twist.twist.angular.y = 0.0;
+    odom.twist.twist.angular.z = 0.0;
+
+    pub_odom_->publish(odom);
+  }
+
+  rclcpp::Subscription<geometry_msgs::msg::TransformStamped>::SharedPtr sub_tf_;
+  rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odom_;
+  std::string input_topic_;
+  std::string output_topic_;
 };
 
 

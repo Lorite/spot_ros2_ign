@@ -16,7 +16,11 @@
   <depend>std_msgs</depend>
   <depend>tf2_ros</depend>
   <depend>geometry_msgs</depend>
-  <depend>ros_gz_sim</depend>
+  <depend>nav_msgs</depend>
+  <!-- <depend>ros_gz_sim</depend> --> # Now using ros_gzharmonic_sim
+  <depend>ros_gzharmonic_sim</depend>
+  <depend>ros_gzharmonic_bridge</depend>
+  <depend>ros_gzharmonic_image</depend>
   <!-- <depend>gazebo_msgs</depend> -->
   <!-- <depend>gazebo_ros</depend> -->
   <!-- <depend>gazebo_plugins</depend> -->

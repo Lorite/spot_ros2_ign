@@ -12,6 +12,7 @@ find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 #find_package(gazebo REQUIRED)
 #find_package(gazebo_dev REQUIRED)
 #find_package(gazebo_msgs REQUIRED)
@@ -28,6 +29,7 @@ set(dependencies
   std_srvs
   tf2_ros
   geometry_msgs
+  nav_msgs
 #  gazebo
 #  gazebo_dev
 #  gazebo_msgs

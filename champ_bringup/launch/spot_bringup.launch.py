@@ -78,8 +78,8 @@ def generate_launch_description():
         description='whether or not to launch rviz'),
     DeclareLaunchArgument(
         'tf_prefix',
-        default_value='',
-        description='...'),
+        default_value='spot_BD_42910021/',
+        description='TF frame prefix to mirror real Spot naming (e.g., spot_BD_42910021/)'),
     DeclareLaunchArgument(
         'rviz_config',
         default_value=os.path.join(get_package_share_directory('spot_description'), 'rviz/viz_spot_lorite.rviz')),
@@ -112,12 +112,14 @@ def generate_launch_description():
             ]
   )
   env_gz_sim = SetEnvironmentVariable('GZ_SIM_RESOURCE_PATH', sim_resource_path)
+  env_gz_version = SetEnvironmentVariable('GZ_VERSION', '8')  # Use Gazebo Harmonic for PX4 compatibility
 
 
-  # Start Gazebo
+  # Start Gazebo (Harmonic version 8 for PX4 compatibility)
   gz_launch = IncludeLaunchDescription(
             PathJoinSubstitution([FindPackageShare('ros_gz_sim'), 'launch', 'gz_sim.launch.py']),
             launch_arguments = [
+               ('gz_version', '8'),  # Use Gazebo Harmonic instead of Fortress
                ('gz_args', [
                    LaunchConfiguration("world_file"),
                    ' -r',
@@ -159,6 +161,7 @@ def generate_launch_description():
     [
       SetParameter(name='use_sim_time', value=True), 
       env_gz_sim,
+      env_gz_version,
       gz_launch,
       spawn_spot,
       declare_rviz_launch_include

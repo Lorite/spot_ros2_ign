@@ -15,9 +15,13 @@ public:
     // Parameters (with sensible defaults)
     this->declare_parameter<std::string>("input_topic", "/model/spot/pose");
     this->declare_parameter<std::string>("output_topic", "ground_truth_odom");
+    this->declare_parameter<std::string>("fixed_frame", "");
+    this->declare_parameter<std::string>("robot_frame", "");
 
     input_topic_ = this->get_parameter("input_topic").as_string();
     output_topic_ = this->get_parameter("output_topic").as_string();
+    fixed_frame_ = this->get_parameter("fixed_frame").as_string();
+    robot_frame_ = this->get_parameter("robot_frame").as_string();
 
     // Subscriber: geometry_msgs/TransformStamped
     sub_tf_ = this->create_subscription<geometry_msgs::msg::TransformStamped>(
@@ -32,9 +36,10 @@ private:
   void tf_cb(const geometry_msgs::msg::TransformStamped & tf_msg)
   {
     nav_msgs::msg::Odometry odom;
-    // Header/frame association mirrors the TransformStamped
-    odom.header = tf_msg.header;               // e.g., frame_id = odom/world (as provided)
-    odom.child_frame_id = tf_msg.child_frame_id; // e.g., base_link (possibly prefixed)
+    odom.header = tf_msg.header;
+    odom.child_frame_id = tf_msg.child_frame_id;
+    if (!fixed_frame_.empty()) { odom.header.frame_id = fixed_frame_; }
+    if (!robot_frame_.empty()) { odom.child_frame_id = robot_frame_; }
 
     // Pose from transform
     odom.pose.pose.position.x = tf_msg.transform.translation.x;
@@ -57,6 +62,8 @@ private:
   rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odom_;
   std::string input_topic_;
   std::string output_topic_;
+  std::string fixed_frame_;
+  std::string robot_frame_;
 };
 
 

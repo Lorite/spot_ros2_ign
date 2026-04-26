@@ -146,9 +146,17 @@ def evaluate_nodes(context, *args, **kwargs):
         output='screen'
     )
 
+    odom_republish_node = Node(
+        package='champ_gazebo',
+        executable='helper_publish_base_pose',
+        output='screen',
+        parameters=[{"fixed_frame": odom_prefixed, "robot_frame": robot_base_link_prefixed}]
+    )
+
     return [
         robot_state_publisher_node,
         ground_truth_node,
+        odom_republish_node,
         broadcast_left_front_cam,
         broadcast_right_front_cam,
         broadcast_left_cam,
@@ -282,13 +290,7 @@ def generate_launch_description():
   )
 
 
-  odom_republish_node = Node(
-        package='champ_gazebo',
-        executable='helper_publish_base_pose',
-        output='screen',
-  )
-  
-  # camera TFs moved into evaluate_nodes to apply tf_prefix consistently
+  # camera TFs and odom republisher moved into evaluate_nodes to apply tf_prefix consistently
 
   # Start quadruped controller
   launch_quadruped_controller = IncludeLaunchDescription(
@@ -325,6 +327,5 @@ def generate_launch_description():
           ),
           condition=IfCondition(LaunchConfiguration("start_quadruped_controller"))
       ),
-      odom_republish_node,
-      # camera broadcasters are created inside nodes_eval to use prefixed frames
+      # camera broadcasters and odom republisher are created inside nodes_eval to use prefixed frames
     ])
